@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bunk Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 { text-align: center; color: #333; margin-bottom: 4px; font-size: 1.5rem; }
+    .subtitle { text-align: center; color: #888; font-size: 0.83rem; margin-bottom: 24px; }
+    label { display: block; font-weight: 600; color: #555; margin-bottom: 5px; font-size: 0.88rem; }
+    input, select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      margin-bottom: 14px;
+      outline: none;
+      background: white;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus { border-color: #667eea; }
+    button {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.88; }
+
+    .results { display: none; margin-top: 24px; }
+    .results.show { display: block; }
+
+    /* info box at top */
+    .info-box {
+      background: #f0f4ff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: 0.82rem;
+      color: #4455aa;
+      line-height: 1.6;
+    }
+    .info-box strong { display: block; margin-bottom: 4px; font-size: 0.84rem; }
+
+    /* summary box */
+    .summary-box {
+      background: #f7f7fb;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .summary-box h3 { font-size: 0.78rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .stat { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 0.87rem; color: #444; }
+    .stat:last-of-type { border: none; }
+    .stat span:last-child { font-weight: 700; color: #222; }
+
+    .verdict {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 12px 14px;
+      border-radius: 10px;
+      line-height: 1.5;
+    }
+    .verdict.safe    { background: #eafaf1; color: #1e8449; }
+    .verdict.danger  { background: #fdedec; color: #c0392b; }
+    .verdict.warning { background: #fef9e7; color: #d35400; }
+
+    /* checkpoint cards */
+    .cp-heading { font-size: 0.78rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .cp-cards { display: flex; flex-direction: column; gap: 14px; }
+
+    .cp-card { border-radius: 14px; padding: 16px; border-left: 5px solid; }
+    .cp-card.cp1 { background: #f0f4ff; border-color: #667eea; }
+    .cp-card.cp2 { background: #f8f0ff; border-color: #9b59b6; }
+    .cp-card.cp3 { background: #f0fff6; border-color: #27ae60; }
+
+    .cp-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cp-card h4 { font-size: 0.92rem; font-weight: 700; color: #333; }
+    .cp-badge {
+      font-size: 0.68rem;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+    .cp-badge.pass     { background: #d5f5e3; color: #1e8449; }
+    .cp-badge.fail     { background: #fadbd8; color: #c0392b; }
+    .cp-badge.progress { background: #e8eaf6; color: #3949ab; }
+    .cp-badge.upcoming { background: #eee;    color: #888; }
+
+    .cp-stat { display: flex; justify-content: space-between; font-size: 0.82rem; color: #555; padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+    .cp-stat:last-of-type { border: none; }
+    .cp-stat span:last-child { font-weight: 700; color: #222; }
+
+    .cp-verdict {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 0.83rem;
+      font-weight: 700;
+      padding: 9px 10px;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+    .cp-verdict.safe    { background: #d5f5e3; color: #1e8449; }
+    .cp-verdict.danger  { background: #fadbd8; color: #c0392b; }
+    .cp-verdict.warning { background: #fdebd0; color: #d35400; }
+    .cp-verdict.info    { background: #e8eaf6; color: #3949ab; }
+
+    .semester-breakdown {
+      background: #f7f7fb;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: 0.8rem;
+      color: #555;
+    }
+    .semester-breakdown strong { display: block; color: #333; margin-bottom: 8px; font-size: 0.82rem; }
+    .sem-row { display: flex; justify-content: space-between; padding: 3px 0; }
+    .sem-row span:last-child { font-weight: 600; color: #333; }
+    .sem-divider { border: none; border-top: 1px dashed #ddd; margin: 6px 0; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>🎓 Bunk Calculator</h1>
+  <p class="subtitle">Know your limits. Bunk smart. 😎</p>
+
+  <div class="info-box">
+    <strong>📌 How checkpoints work:</strong>
+    ✅ CP1 — After 24 working days<br>
+    ✅ CP2 — After 24 working + 3 exam + 19 working days<br>
+    ✅ CP3 — After 24 + 3 exam + 19 + 3 exam + 24 working days<br>
+    📝 Working day = 7 classes &nbsp;|&nbsp; Exam day = 2 classes
+  </div>
+
+  <label>Where are you right now?</label>
+  <select id="phase">
+    <option value="0">During 1st Sessional (working days 1–24)</option>
+    <option value="1">During Exam 1 (exam days 1–3)</option>
+    <option value="2">During 2nd Sessional (working days 25–43)</option>
+    <option value="3">During Exam 2 (exam days 4–6)</option>
+    <option value="4">During 3rd Sessional (working days 44–67)</option>
+    <option value="5">After Exam 3 / End of Semester</option>
+  </select>
+
+  <label>Total Classes Conducted So Far <span style="color:#bbb;font-weight:400">(all phases combined)</span></label>
+  <input type="number" id="total" placeholder="e.g. 140" min="0">
+
+  <label>Total Classes Attended So Far</label>
+  <input type="number" id="attended" placeholder="e.g. 112" min="0">
+
+  <button onclick="calculate()">Calculate 🔍</button>
+
+  <div class="results" id="results">
+
+    <!-- Semester class breakdown -->
+    <div class="semester-breakdown">
+      <strong>📐 Full Semester Class Breakdown</strong>
+      <div class="sem-row"><span>1st Sessional (24 days × 7)</span><span id="bd-s1w"></span></div>
+      <div class="sem-row"><span>Exam 1 (3 days × 2)</span><span id="bd-e1"></span></div>
+      <hr class="sem-divider">
+      <div class="sem-row"><span>2nd Sessional (19 days × 7)</span><span id="bd-s2w"></span></div>
+      <div class="sem-row"><span>Exam 2 (3 days × 2)</span><span id="bd-e2"></span></div>
+      <hr class="sem-divider">
+      <div class="sem-row"><span>3rd Sessional (24 days × 7)</span><span id="bd-s3w"></span></div>
+      <div class="sem-row"><span>Exam 3 (6 days × 2) + Activity (2 days × 7)</span><span id="bd-e3"></span></div>
+      <hr class="sem-divider">
+      <div class="sem-row" style="font-weight:700;color:#333"><span>Total Semester Classes</span><span id="bd-total"></span></div>
+    </div>
+
+    <!-- Current status summary -->
+    <div class="summary-box">
+      <h3>📊 Your Current Status</h3>
+      <div class="stat"><span>Classes Attended / Conducted</span><span id="ov-ratio"></span></div>
+      <div class="stat"><span>Current Attendance %</span><span id="ov-pct"></span></div>
+      <div class="stat"><span>Classes Remaining (semester)</span><span id="ov-remaining"></span></div>
+      <div class="stat"><span>Next Checkpoint</span><span id="ov-nextcp"></span></div>
+      <div class="verdict" id="ov-verdict"></div>
+    </div>
+
+    <!-- Checkpoint cards -->
+    <div class="cp-heading">🚩 Checkpoints — 75% Required at Each</div>
+    <div class="cp-cards">
+
+      <div class="cp-card cp1">
+        <div class="cp-card-header">
+          <h4>📘 Checkpoint 1</h4>
+          <span class="cp-badge" id="cp1-badge"></span>
+        </div>
+        <div class="cp-stat"><span>After</span><span>24 working days</span></div>
+        <div class="cp-stat"><span>Total Classes at CP1</span><span id="cp1-total"></span></div>
+        <div class="cp-stat"><span>Need to Attend (75%)</span><span id="cp1-min"></span></div>
+        <div class="cp-stat"><span>Max Bunkable by CP1</span><span id="cp1-bunk"></span></div>
+        <div class="cp-verdict" id="cp1-verdict"></div>
+      </div>
+
+      <div class="cp-card cp2">
+        <div class="cp-card-header">
+          <h4>📗 Checkpoint 2</h4>
+          <span class="cp-badge" id="cp2-badge"></span>
+        </div>
+        <div class="cp-stat"><span>After</span><span>24 working + 3 exam + 19 working days</span></div>
+        <div class="cp-stat"><span>Total Classes at CP2</span><span id="cp2-total"></span></div>
+        <div class="cp-stat"><span>Need to Attend (75%)</span><span id="cp2-min"></span></div>
+        <div class="cp-stat"><span>Max Bunkable by CP2</span><span id="cp2-bunk"></span></div>
+        <div class="cp-verdict" id="cp2-verdict"></div>
+      </div>
+
+      <div class="cp-card cp3">
+        <div class="cp-card-header">
+          <h4>📙 Checkpoint 3</h4>
+          <span class="cp-badge" id="cp3-badge"></span>
+        </div>
+        <div class="cp-stat"><span>After</span><span>+3 exam + 24 working days</span></div>
+        <div class="cp-stat"><span>Total Classes at CP3</span><span id="cp3-total"></span></div>
+        <div class="cp-stat"><span>Need to Attend (75%)</span><span id="cp3-min"></span></div>
+        <div class="cp-stat"><span>Max Bunkable by CP3</span><span id="cp3-bunk"></span></div>
+        <div class="cp-verdict" id="cp3-verdict"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Semester structure ───────────────────────────────────────────
+// Phase 0: 1st Sessional — 24 working days × 7 = 168
+// Phase 1: Exam 1        — 3 exam days × 2     = 6
+// CHECKPOINT 1 at end of phase 1 (cumulative: 168 + 6 = 174)
+// Phase 2: 2nd Sessional — 19 working days × 7 = 133
+// Phase 3: Exam 2        — 3 exam days × 2     = 6
+// CHECKPOINT 2 at end of phase 3 (cumulative: 174 + 133 + 6 = 313)
+// Phase 4: 3rd Sessional — 24 working days × 7 = 168
+// CHECKPOINT 3 at end of phase 4 (cumulative: 313 + 168 = 481)
+// Phase 5: Exam 3        — 6 exam days × 2 + 2 activity × 7 = 12 + 14 = 26
+// Grand total = 481 + 26 = 507
+
+const S1W  = 24 * 7;   // 168
+const E1   = 3  * 2;   // 6
+const S2W  = 19 * 7;   // 133
+const E2   = 3  * 2;   // 6
+const S3W  = 24 * 7;   // 168
+const E3   = 6  * 2 + 2 * 7; // 26
+
+const CP1_TOTAL = S1W + E1;              // 174  — checkpoint after exam1
+const CP2_TOTAL = CP1_TOTAL + S2W + E2; // 313  — checkpoint after exam2
+const CP3_TOTAL = CP2_TOTAL + S3W;      // 481  — checkpoint after 3rd sessional working days
+const SEM_TOTAL = CP3_TOTAL + E3;       // 507
+
+// Classes conducted so far at the START of each phase
+const PHASE_START = [0, S1W, S1W + E1, CP1_TOTAL + S2W, CP2_TOTAL, CP2_TOTAL + S3W];
+const PHASE_END   = [S1W, S1W + E1, CP1_TOTAL + S2W, CP2_TOTAL, CP2_TOTAL + S3W, SEM_TOTAL];
+
+const REQ = 0.75;
+
+function fmt(classes) {
+  const d = Math.floor(classes / 7);
+  return `${d} day${d !== 1 ? 's' : ''} (${classes} classes)`;
+}
+
+function fmtShort(classes) {
+  return `${classes} classes`;
+}
+
+function calculate() {
+  const phase    = parseInt(document.getElementById('phase').value);
+  const conducted = parseInt(document.getElementById('total').value) || 0;
+  const attended  = parseInt(document.getElementById('attended').value) || 0;
+
+  if (conducted === 0) { alert('Enter total classes conducted so far.'); return; }
+  if (attended > conducted) { alert('Attended cannot exceed conducted.'); return; }
+
+  // ── Fill breakdown ──
+  document.getElementById('bd-s1w').textContent  = `${S1W} classes`;
+  document.getElementById('bd-e1').textContent   = `${E1} classes`;
+  document.getElementById('bd-s2w').textContent  = `${S2W} classes`;
+  document.getElementById('bd-e2').textContent   = `${E2} classes`;
+  document.getElementById('bd-s3w').textContent  = `${S3W} classes`;
+  document.getElementById('bd-e3').textContent   = `${E3} classes`;
+  document.getElementById('bd-total').textContent = `${SEM_TOTAL} classes`;
+
+  // ── Summary ──
+  const currPct   = (attended / conducted * 100).toFixed(1);
+  const remaining = Math.max(0, SEM_TOTAL - conducted);
+
+  // Next checkpoint
+  let nextCpLabel = '—';
+  let nextCpTotal = null;
+  if (conducted < CP1_TOTAL) { nextCpLabel = 'CP1 (after Exam 1)'; nextCpTotal = CP1_TOTAL; }
+  else if (conducted < CP2_TOTAL) { nextCpLabel = 'CP2 (after Exam 2)'; nextCpTotal = CP2_TOTAL; }
+  else if (conducted < CP3_TOTAL) { nextCpLabel = 'CP3 (end of 3rd Sessional)'; nextCpTotal = CP3_TOTAL; }
+
+  document.getElementById('ov-ratio').textContent   = `${attended} / ${conducted}`;
+  document.getElementById('ov-pct').textContent     = `${currPct}%`;
+  document.getElementById('ov-remaining').textContent = fmt(remaining);
+  document.getElementById('ov-nextcp').textContent  = nextCpLabel;
+
+  // ── Overall verdict based on nearest upcoming checkpoint ──
+  const ovv = document.getElementById('ov-verdict');
+
+  if (nextCpTotal !== null) {
+    const classesToCp     = Math.max(0, nextCpTotal - conducted);
+    const minNeededAtCp   = Math.ceil(REQ * nextCpTotal);
+    const mustAttendMore  = Math.max(0, minNeededAtCp - attended);
+    const canBunkTillCp   = Math.max(0, classesToCp - mustAttendMore);
+    const canPassCp       = (attended + classesToCp) >= minNeededAtCp;
+
+    if (attended >= minNeededAtCp) {
+      ovv.textContent = `🎉 Already cleared ${nextCpLabel}! Can bunk ${fmt(canBunkTillCp)} till then.`;
+      ovv.className   = 'verdict safe';
+    } else if (canPassCp && canBunkTillCp > 0) {
+      ovv.textContent = `⚠️ Need ${mustAttendMore} more classes for ${nextCpLabel}. Can bunk ${fmt(canBunkTillCp)} in between.`;
+      ovv.className   = 'verdict warning';
+    } else if (canPassCp) {
+      ovv.textContent = `😬 Must attend ALL remaining classes until ${nextCpLabel} — no room to bunk!`;
+      ovv.className   = 'verdict warning';
+    } else {
+      ovv.textContent = `😱 Can't reach 75% by ${nextCpLabel} even attending everything! You're cooked. 💀`;
+      ovv.className   = 'verdict danger';
+    }
+  } else {
+    // Past all checkpoints
+    const finalPct = (attended / CP3_TOTAL * 100).toFixed(1);
+    ovv.textContent = `✅ All checkpoints done! Final sessional attendance: ${finalPct}%`;
+    ovv.className   = 'verdict safe';
+  }
+
+  // ── Checkpoint cards ──
+  const CPs = [
+    { id: 'cp1', total: CP1_TOTAL, label: 'After Exam 1' },
+    { id: 'cp2', total: CP2_TOTAL, label: 'After Exam 2' },
+    { id: 'cp3', total: CP3_TOTAL, label: 'End of 3rd Sessional' },
+  ];
+
+  CPs.forEach((cp) => {
+    const minAtt   = Math.ceil(REQ * cp.total);
+    const maxBunk  = cp.total - minAtt;
+
+    document.getElementById(`${cp.id}-total`).textContent = fmtShort(cp.total);
+    document.getElementById(`${cp.id}-min`).textContent   = fmtShort(minAtt);
+    document.getElementById(`${cp.id}-bunk`).textContent  = fmt(maxBunk);
+
+    const badge   = document.getElementById(`${cp.id}-badge`);
+    const verdict = document.getElementById(`${cp.id}-verdict`);
+
+    if (conducted >= cp.total) {
+      // Past this checkpoint — show actual result
+      // Figure out how many attended up to this checkpoint
+      // We only have current attended, so approximate based on ratio
+      const ratio = attended / conducted;
+      const attAtCp = Math.round(ratio * cp.total); // approx
+      const pctAtCp = (attAtCp / cp.total * 100).toFixed(1);
+      const passed  = attAtCp >= minAtt;
+
+      if (passed) {
+        badge.textContent = '✅ PASSED';
+        badge.className   = 'cp-badge pass';
+        verdict.textContent = `Cleared with ~${pctAtCp}%. Exam was unlocked. ✅`;
+        verdict.className   = 'cp-verdict safe';
+      } else {
+        badge.textContent = '❌ FAILED';
+        badge.className   = 'cp-badge fail';
+        verdict.textContent = `Estimated ~${pctAtCp}% at this checkpoint. Below 75%! ❌`;
+        verdict.className   = 'cp-verdict danger';
+      }
+
+    } else {
+      // Upcoming or current checkpoint
+      const classesToCp    = Math.max(0, cp.total - conducted);
+      const mustAttendMore = Math.max(0, minAtt - attended);
+      const canBunkTillCp  = Math.max(0, classesToCp - mustAttendMore);
+      const canPass        = (attended + classesToCp) >= minAtt;
+      const alreadyMet     = attended >= minAtt;
+
+      if (conducted < PHASE_END[0] || (cp.total > CP1_TOTAL && conducted < CP1_TOTAL)) {
+        // Clearly a future checkpoint not yet reachable in current phase
+      }
+
+      if (alreadyMet) {
+        badge.textContent = '✅ ON TRACK';
+        badge.className   = 'cp-badge pass';
+        verdict.textContent = `Already at 75%+ for this checkpoint! Can still bunk ${fmt(canBunkTillCp)}.`;
+        verdict.className   = 'cp-verdict safe';
+      } else if (canPass && canBunkTillCp > 0) {
+        badge.textContent = '▶ UPCOMING';
+        badge.className   = 'cp-badge progress';
+        verdict.textContent = `Need ${mustAttendMore} more classes to hit 75%. Can bunk ${fmt(canBunkTillCp)} in between.`;
+        verdict.className   = 'cp-verdict warning';
+      } else if (canPass) {
+        badge.textContent = '⚠ TIGHT';
+        badge.className   = 'cp-badge progress';
+        verdict.textContent = `Must attend all ${classesToCp} remaining classes — zero room to bunk!`;
+        verdict.className   = 'cp-verdict warning';
+      } else {
+        badge.textContent = '❌ AT RISK';
+        badge.className   = 'cp-badge fail';
+        verdict.textContent = `Impossible to reach 75% by this checkpoint even attending everything. 💀`;
+        verdict.className   = 'cp-verdict danger';
+      }
+    }
+  });
+
+  document.getElementById('results').classList.add('show');
+}
+</script>
+</body>
+</html>
