@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>College Attendance Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 { text-align: center; color: #333; margin-bottom: 6px; font-size: 1.5rem; }
+    .subtitle { text-align: center; color: #888; font-size: 0.85rem; margin-bottom: 24px; }
+    label { display: block; font-weight: 600; color: #555; margin-bottom: 6px; font-size: 0.9rem; }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      margin-bottom: 16px;
+      transition: border 0.2s;
+      outline: none;
+    }
+    input:focus { border-color: #667eea; }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    .result {
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: 12px;
+      background: #f7f7fb;
+      display: none;
+    }
+    .result.show { display: block; }
+    .stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+    .stat:last-child { border: none; }
+    .stat span:last-child { font-weight: 700; }
+    .safe { color: #27ae60; }
+    .danger { color: #e74c3c; }
+    .warning { color: #f39c12; }
+    .highlight {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 16px;
+    }
+    .highlight.safe { background: #eafaf1; color: #27ae60; }
+    .highlight.danger { background: #fdedec; color: #e74c3c; }
+    .highlight.warning { background: #fef9e7; color: #f39c12; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>🎓 Bunk Calculator</h1>
+  <p class="subtitle">Find out how many classes you can skip!</p>
+
+  <label>Total Classes Conducted</label>
+  <input type="number" id="total" placeholder="e.g. 60" min="0">
+
+  <label>Classes Attended</label>
+  <input type="number" id="attended" placeholder="e.g. 45" min="0">
+
+  <label>Minimum Required Attendance (%)</label>
+  <input type="number" id="required" placeholder="e.g. 75" min="0" max="100" value="75">
+
+  <label>Total Classes Left in Semester</label>
+  <input type="number" id="remaining" placeholder="e.g. 30" min="0" value="0">
+
+  <button onclick="calculate()">Calculate</button>
+
+  <div class="result" id="result">
+    <div class="stat"><span>Current Attendance</span><span id="currPct"></span></div>
+    <div class="stat"><span>Classes Attended / Total</span><span id="ratio"></span></div>
+    <div class="stat"><span>Can Bunk (remaining classes)</span><span id="bunkable"></span></div>
+    <div class="stat"><span>Must Attend (remaining classes)</span><span id="mustAttend"></span></div>
+    <div class="stat"><span>Classes Short (to reach minimum)</span><span id="short"></span></div>
+    <div class="highlight" id="verdict"></div>
+  </div>
+</div>
+
+<script>
+function calculate() {
+  const total = parseInt(document.getElementById('total').value) || 0;
+  const attended = parseInt(document.getElementById('attended').value) || 0;
+  const required = parseFloat(document.getElementById('required').value) || 75;
+  const remaining = parseInt(document.getElementById('remaining').value) || 0;
+
+  if (total === 0) { alert('Please enter total classes conducted.'); return; }
+  if (attended > total) { alert('Attended cannot exceed total classes.'); return; }
+
+  const currPct = (attended / total * 100).toFixed(2);
+  const grandTotal = total + remaining;
+
+  // How many of the remaining classes must be attended?
+  const minNeeded = Math.ceil(required / 100 * grandTotal);
+  const alreadyHave = attended;
+  const mustAttendMore = Math.max(0, minNeeded - alreadyHave);
+  const canBunk = Math.max(0, remaining - mustAttendMore);
+
+  // How short are we right now (ignoring future)?
+  const minNow = Math.ceil(required / 100 * total);
+  const shortfall = Math.max(0, minNow - attended);
+
+  document.getElementById('currPct').textContent = `${currPct}%`;
+  document.getElementById('ratio').textContent = `${attended} / ${total}`;
+  document.getElementById('bunkable').textContent = canBunk > 0 ? `✅ ${canBunk} classes` : '❌ 0 classes';
+  document.getElementById('mustAttend').textContent = `${mustAttendMore} classes`;
+  document.getElementById('short').textContent = shortfall > 0 ? `⚠️ ${shortfall} classes` : '✅ None';
+
+  const verdict = document.getElementById('verdict');
+  const result = document.getElementById('result');
+
+  if (parseFloat(currPct) >= required && canBunk > 0) {
+    verdict.textContent = `😎 You can bunk up to ${canBunk} more class${canBunk > 1 ? 'es' : ''}!`;
+    verdict.className = 'highlight safe';
+  } else if (parseFloat(currPct) >= required && canBunk === 0) {
+    verdict.textContent = `😬 You're safe, but can't bunk any more!`;
+    verdict.className = 'highlight warning';
+  } else if (shortfall > 0 && remaining === 0) {
+    verdict.textContent = `😱 You're short by ${shortfall} class${shortfall > 1 ? 'es' : ''}. No more bunking!`;
+    verdict.className = 'highlight danger';
+  } else if (mustAttendMore > remaining) {
+    verdict.textContent = `😱 Even attending all remaining classes won't save you!`;
+    verdict.className = 'highlight danger';
+  } else {
+    verdict.textContent = `📚 Attend at least ${mustAttendMore} of ${remaining} remaining classes.`;
+    verdict.className = 'highlight warning';
+  }
+
+  result.classList.add('show');
+}
+</script>
+</body>
+</html>
