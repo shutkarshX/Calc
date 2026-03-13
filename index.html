@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #fff;
+      font-size: 1.8rem;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      text-align: center;
+      color: rgba(255,255,255,0.78);
+      font-size: 0.88rem;
+      margin-bottom: 28px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 22px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+    }
+
+    /* ── Add-subject form ── */
+    .add-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .add-form input {
+      flex: 1 1 140px;
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+      min-width: 0;
+    }
+    .add-form input:focus { border-color: #667eea; }
+    .add-form button {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .add-form button:hover { opacity: 0.88; }
+
+    /* ── Subject cards ── */
+    .subjects { display: flex; flex-direction: column; gap: 14px; }
+
+    .subj-card {
+      background: #f8f8fc;
+      border-radius: 14px;
+      padding: 16px 18px;
+      border-left: 5px solid #667eea;
+      position: relative;
+    }
+    .subj-card.safe   { border-color: #27ae60; }
+    .subj-card.warn   { border-color: #f39c12; }
+    .subj-card.danger { border-color: #e74c3c; }
+
+    .subj-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .subj-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #333;
+    }
+    .subj-pct {
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+    .pct-safe   { color: #27ae60; }
+    .pct-warn   { color: #f39c12; }
+    .pct-danger { color: #e74c3c; }
+
+    /* Progress bar */
+    .prog-bar-bg {
+      background: #e8e8f0;
+      border-radius: 6px;
+      height: 8px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .prog-bar {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.4s ease;
+    }
+    .prog-safe   { background: linear-gradient(90deg, #27ae60, #2ecc71); }
+    .prog-warn   { background: linear-gradient(90deg, #f39c12, #f1c40f); }
+    .prog-danger { background: linear-gradient(90deg, #e74c3c, #e67e22); }
+
+    /* Inputs row */
+    .subj-inputs {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .subj-inputs label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #888;
+      text-align: center;
+      flex: 1;
+    }
+    .subj-inputs input[type="number"] {
+      width: 100%;
+      padding: 7px 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      text-align: center;
+      transition: border 0.2s;
+    }
+    .subj-inputs input[type="number"]:focus { border-color: #667eea; }
+    .input-group { flex: 1; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+
+    /* Stats row */
+    .subj-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .subj-stats span { font-weight: 700; color: #333; }
+
+    /* Info line */
+    .subj-info {
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 7px 10px;
+      border-radius: 8px;
+    }
+    .subj-info.safe   { background: #eafaf1; color: #1e8449; }
+    .subj-info.warn   { background: #fef9e7; color: #d35400; }
+    .subj-info.danger { background: #fdedec; color: #c0392b; }
+
+    /* Delete button */
+    .del-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #ccc;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .del-btn:hover { color: #e74c3c; }
+
+    /* ── Summary card ── */
+    .summary-card {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 18px;
+      padding: 22px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+      color: #fff;
+    }
+    .summary-card h2 { font-size: 1rem; margin-bottom: 14px; opacity: 0.9; }
+    .sum-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+    .sum-row:last-of-type { border: none; }
+    .sum-row span:last-child { font-weight: 700; }
+
+    .empty-state {
+      text-align: center;
+      color: #bbb;
+      font-size: 0.9rem;
+      padding: 20px 0 8px;
+    }
+
+    /* ── Req input ── */
+    .req-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0;
+    }
+    .req-row label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #555;
+      white-space: nowrap;
+    }
+    .req-row input {
+      width: 80px;
+      padding: 8px 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      text-align: center;
+      transition: border 0.2s;
+    }
+    .req-row input:focus { border-color: #667eea; }
+    .req-row span { font-size: 0.88rem; color: #888; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>📋 Attendance Tracker</h1>
+  <p class="subtitle">Track all your subjects in one place. Know when you can bunk!</p>
+
+  <!-- Settings card -->
+  <div class="card">
+    <div class="req-row">
+      <label for="reqPct">Required Attendance:</label>
+      <input type="number" id="reqPct" value="75" min="1" max="100" oninput="refreshAll()" aria-label="Required attendance percentage">
+      <span>% per subject</span>
+    </div>
+  </div>
+
+  <!-- Add subject card -->
+  <div class="card">
+    <div class="add-form">
+      <input type="text" id="newSubject" placeholder="Subject name (e.g. Maths)" maxlength="40"
+             aria-label="Subject name"
+             onkeydown="if(event.key==='Enter') addSubject()">
+      <input type="number" id="newTotal" placeholder="Total" min="0" style="max-width:100px"
+             aria-label="Total classes conducted"
+             onkeydown="if(event.key==='Enter') addSubject()">
+      <input type="number" id="newAttended" placeholder="Attended" min="0" style="max-width:110px"
+             aria-label="Classes attended"
+             onkeydown="if(event.key==='Enter') addSubject()">
+      <button onclick="addSubject()">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Subject list -->
+  <div class="subjects" id="subjList">
+    <div class="empty-state" id="emptyState">No subjects yet. Add one above ☝️</div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-card" id="summaryCard" style="display:none">
+    <h2>📊 Overall Summary</h2>
+    <div class="sum-row"><span>Total Classes Conducted</span><span id="sumTotal"></span></div>
+    <div class="sum-row"><span>Total Classes Attended</span><span id="sumAttended"></span></div>
+    <div class="sum-row"><span>Overall Attendance</span><span id="sumPct"></span></div>
+    <div class="sum-row"><span>Subjects Safe (≥ req%)</span><span id="sumSafe"></span></div>
+    <div class="sum-row"><span>Subjects at Risk</span><span id="sumRisk"></span></div>
+  </div>
+
+</div>
+
+<script>
+let subjects = JSON.parse(localStorage.getItem('att_subjects') || '[]');
+
+function save() {
+  localStorage.setItem('att_subjects', JSON.stringify(subjects));
+}
+
+function getReq() {
+  return parseFloat(document.getElementById('reqPct').value) || 75;
+}
+
+function pctClass(pct, req) {
+  if (pct >= req) return 'safe';
+  if (pct >= req - 10) return 'warn';
+  return 'danger';
+}
+
+function makeInfoText(attended, total, req) {
+  const req100 = req / 100;
+  const minNeeded = Math.ceil(req100 * total);
+  const shortfall = Math.max(0, minNeeded - attended);
+  const currPct = total > 0 ? (attended / total * 100) : 0;
+
+  if (shortfall > 0) {
+    return {
+      cls: 'danger',
+      text: `⚠️ Short by ${shortfall} class${shortfall !== 1 ? 'es' : ''} — stop bunking!`
+    };
+  }
+  // How many future classes can be skipped while staying ≥ req?
+  // If we attend x more out of n more: (attended + x) / (total + n) >= req
+  // Max skip = total - minNeeded (already attended enough)
+  // But going forward: to maintain req, bunkable = floor((attended - req100*total) / req100)
+  const slack = Math.floor((attended - req100 * total) / req100);
+  if (slack > 0) {
+    return {
+      cls: 'safe',
+      text: `😎 You can bunk ${slack} more class${slack !== 1 ? 'es' : ''} and stay safe!`
+    };
+  }
+  return {
+    cls: 'warn',
+    text: `😬 You're just at the limit — don't miss any more classes!`
+  };
+}
+
+function renderSubjects() {
+  const req = getReq();
+  const list = document.getElementById('subjList');
+  const empty = document.getElementById('emptyState');
+
+  // Remove all rendered cards (keep emptyState node)
+  Array.from(list.querySelectorAll('.subj-card')).forEach(el => el.remove());
+
+  if (subjects.length === 0) {
+    empty.style.display = '';
+    document.getElementById('summaryCard').style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+
+  let sumTotal = 0, sumAtt = 0, nSafe = 0, nRisk = 0;
+
+  subjects.forEach((s, i) => {
+    const total    = s.total || 0;
+    const attended = s.attended || 0;
+    const pct      = total > 0 ? (attended / total * 100) : 0;
+    const cls      = total > 0 ? pctClass(pct, req) : '';
+    const barCls   = cls ? 'prog-' + cls : 'prog-warn';
+    const pctCls   = cls ? 'pct-' + cls : 'pct-warn';
+    const info     = total > 0 ? makeInfoText(attended, total, req) : { cls: 'warn', text: 'Enter class data above' };
+
+    if (total > 0) {
+      sumTotal += total;
+      sumAtt   += attended;
+      if (cls === 'safe') nSafe++; else nRisk++;
+    }
+
+    const card = document.createElement('div');
+    card.className = `subj-card ${cls}`;
+    card.dataset.index = i;
+    card.innerHTML = `
+      <button class="del-btn" onclick="deleteSubject(${i})" title="Remove ${escHtml(s.name)}" aria-label="Remove ${escHtml(s.name)}">✕</button>
+      <div class="subj-header">
+        <div class="subj-name">${escHtml(s.name)}</div>
+        <div class="subj-pct ${pctCls}">${total > 0 ? pct.toFixed(1) + '%' : '—'}</div>
+      </div>
+      <div class="prog-bar-bg">
+        <div class="prog-bar ${barCls}" style="width:${total > 0 ? Math.min(100,pct).toFixed(1) : 0}%"></div>
+      </div>
+      <div class="subj-inputs">
+        <div class="input-group">
+          <label>Total</label>
+          <input type="number" min="0" value="${total || ''}" placeholder="0"
+                 aria-label="Total classes for ${escHtml(s.name)}"
+                 oninput="updateSubject(${i},'total',this.value)">
+        </div>
+        <div class="input-group">
+          <label>Attended</label>
+          <input type="number" min="0" value="${attended || ''}" placeholder="0"
+                 aria-label="Classes attended for ${escHtml(s.name)}"
+                 oninput="updateSubject(${i},'attended',this.value)">
+        </div>
+      </div>
+      <div class="subj-stats">
+        <div>Attended: <span>${attended} / ${total}</span></div>
+        <div>Min needed (${req}%): <span>${total > 0 ? Math.ceil(req/100*total) : '—'}</span></div>
+      </div>
+      <div class="subj-info ${info.cls}">${info.text}</div>
+    `;
+    list.appendChild(card);
+  });
+
+  // Summary
+  const summaryCard = document.getElementById('summaryCard');
+  summaryCard.style.display = '';
+  const overallPct = sumTotal > 0 ? (sumAtt / sumTotal * 100).toFixed(1) : '—';
+  document.getElementById('sumTotal').textContent    = sumTotal;
+  document.getElementById('sumAttended').textContent = sumAtt;
+  document.getElementById('sumPct').textContent      = sumTotal > 0 ? overallPct + '%' : '—';
+  document.getElementById('sumSafe').textContent     = `${nSafe} / ${subjects.filter(s=>s.total>0).length}`;
+  document.getElementById('sumRisk').textContent     = nRisk;
+}
+
+function validateAttendance(attended, total) {
+  return total === 0 || attended <= total;
+}
+
+function addSubject() {
+  const nameEl = document.getElementById('newSubject');
+  const totalEl = document.getElementById('newTotal');
+  const attEl = document.getElementById('newAttended');
+
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); return; }
+
+  const total    = parseInt(totalEl.value) || 0;
+  const attended = parseInt(attEl.value)   || 0;
+
+  if (!validateAttendance(attended, total)) {
+    alert('Attended cannot exceed total.');
+    return;
+  }
+
+  subjects.push({ name, total, attended });
+  save();
+  renderSubjects();
+
+  nameEl.value  = '';
+  totalEl.value = '';
+  attEl.value   = '';
+  nameEl.focus();
+}
+
+function updateSubject(i, field, val) {
+  subjects[i][field] = parseInt(val) || 0;
+  // Clamp attended to total to keep data consistent
+  if (!validateAttendance(subjects[i].attended, subjects[i].total)) {
+    subjects[i].attended = subjects[i].total;
+  }
+  save();
+  renderSubjects();
+}
+
+function deleteSubject(i) {
+  subjects.splice(i, 1);
+  save();
+  renderSubjects();
+}
+
+function refreshAll() {
+  renderSubjects();
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init
+renderSubjects();
+</script>
+</body>
+</html>
